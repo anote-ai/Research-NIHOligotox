@@ -1,0 +1,9 @@
+oligo_id,sequence,backbone_class,sugar_mod,conjugate,synthesis_vendor,purity_percent,mass_confirmed,endotoxin_eu_ml,batch_group,ctrl_type,expected_endpoint,expected_response,reference
+CTRL-POS-001,TCGTCGTTTTGTCGTTTTGTCGTT,PS,DNA,none,IDT,98.5,TRUE,0.1,controls,positive,IFNa,high,"CpG ODN 2006 (TLR9 agonist)"
+CTRL-POS-002,GCATTTGCTTTGCATATGCTTCAT,PS,DNA,none,IDT,97.2,TRUE,0.08,controls,positive,Cell_viability_ATPLite,low,"ISIS 104838 hepatotoxic analog"
+CTRL-POS-003,GGGGGGGGGGGGGGGG,PS,DNA,none,IDT,95.1,TRUE,0.15,controls,positive,Platelet_aggregation,high,"Poly-G G4 complement activator"
+CTRL-POS-004,CGGCGGCGGCGGCGGCGG,PS,DNA,none,Eurofins,96.3,TRUE,0.12,controls,positive,C3a,high,"CpG-rich complement activator"
+CTRL-NEG-001,CCTTCCTTCCTTCCTTCCTT,PS,2OMe,none,IDT,99.1,TRUE,0.05,controls,negative,all,inactive,"Nusinersen (Spinraza) backbone analog"
+CTRL-NEG-002,GTATTTATAATCTGGTACTT,PO,DNA,none,IDT,98.8,TRUE,0.04,controls,negative,all,inactive,"Scrambled PS-ASO control"
+CTRL-NEG-003,ATCGATCGATCGATCGATCG,PS,2OMe,GalNAc,IDT,97.5,TRUE,0.07,controls,negative,all,inactive,"GalNAc-ASO clinical analog"
+CTRL-MOD-001,GCCTCTTCCTTCTCCTGCAT,PS,DNA,none,Eurofins,97.8,TRUE,0.09,controls,moderate,ALT_secretion,moderate,"Mipomersen (Kynamro) PS-ASO"
