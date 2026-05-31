@@ -30,8 +30,8 @@ OligoToxDB is the largest open dataset of **human in vitro oligonucleotide toxic
 # Install
 pip install -e ".[ml,portal]"
 
-# Generate synthetic data for testing
-python scripts/generate_synthetic_data.py --n-oligos 200 --output data/test/
+# Generate synthetic data for testing (all 47 endpoints, Tier 1 = all 5 assay systems)
+python scripts/generate_synthetic_data.py --n-oligos 200 --output data/test/ --tier 1
 
 # Compute sequence features
 oligotox-features data/test/compounds.csv data/test/features.csv
@@ -69,11 +69,11 @@ docker run -p 7860:7860 -e OLIGOTOXDB_PATH=/data/db.duckdb oligotoxdb python por
 oligotoxdb/
 ├── oligotoxdb/
 │   ├── endpoints.py         # All 47 toxicity endpoints (canonical registry)
-│   ├── features.py          # Sequence & physicochemical feature computation
-│   ├── qc.py                # Plate QC, 4PL dose-response fitting, Grubbs test
-│   ├── database.py          # DuckDB interface (OTMRS schema)
-│   ├── ingestion.py         # ETL pipeline with Pydantic validation
-│   ├── omics.py             # RNA-seq and proteomics integration
+│   ├── features.py          # Sequence & physicochemical feature computation (45+ features)
+│   ├── qc.py                # Plate QC (Z'-factor), 4PL dose-response fitting, Grubbs test
+│   ├── database.py          # DuckDB interface (OTMRS schema, 7 tables)
+│   ├── ingestion.py         # ETL pipeline with Pydantic v2 validation
+│   ├── omics.py             # RNA-seq and proteomics integration (GEO/PRIDE export)
 │   └── otmrs_validator.py   # OTMRS compliance validator for external submissions
 ├── models/
 │   ├── xgb_model.py         # OligoTox-XGB (multi-endpoint, SHAP interpretable)
@@ -85,7 +85,7 @@ oligotoxdb/
 ├── portal/
 │   └── app.py               # Gradio web app (predictor, explorer, DR viewer, PCA)
 ├── scripts/
-│   ├── generate_synthetic_data.py   # Synthetic data for CI/testing
+│   ├── generate_synthetic_data.py   # Synthetic data for CI/testing (all 47 endpoints)
 │   └── release_batch.py             # Rolling batch release (Zenodo + HuggingFace)
 ├── notebooks/
 │   └── OligoToxDB_Analysis_Walkthrough.ipynb
@@ -98,29 +98,44 @@ oligotoxdb/
 
 ---
 
+## Toxicity Endpoint Panel
+
+All 47 endpoints are defined in `oligotoxdb/endpoints.py` — the single source of truth used across the pipeline, models, and portal.
+
+| Assay System | Count | Mechanism | Example Endpoints |
+|---|---|---|---|
+| Primary Human Hepatocytes (PHH) | 12 | Hepatotoxicity | Cell_viability_ATPLite, LDH_release, ALT_secretion, ROS_CellROX, Mitochondrial_JC1 |
+| Kidney Proximal Tubule Organoids | 8 | Nephrotoxicity | KIM1_secretion, NGAL_secretion, Organoid_viability_3D, TightJunction_ZO1 |
+| PBMC Co-culture | 18 | Immunotoxicity, Complement | IFNa, IL6, TNFa, C3a, C5a, TLR9_activation, NK_CD69 |
+| Platelet-Rich Plasma | 7 | Coagulopathy, Thrombocytopenia | Platelet_aggregation, aPTT, PT, FactorXa_inhib |
+| Liver-Kidney MPS (organ-on-chip) | 2 | Hepato/Nephrotoxicity | MPS_ALT, MPS_KIM1 |
+
+---
+
 ## Models
 
 ### OligoTox-XGB
-Gradient-boosted multi-endpoint regressor + classifier per toxicity endpoint. SHAP values computed for every prediction.
+Gradient-boosted multi-endpoint regressor + calibrated classifier per toxicity endpoint. SHAP values for every prediction. One model per endpoint trained on log₁₀(IC50).
 
 ```python
 from models.xgb_model import OligoToxXGB
 
 model = OligoToxXGB.load("models/xgb/")
-predictions = model.predict(features_df)
+predictions = model.predict(features_df)           # IC50 + toxicity class per endpoint
 shap_df = model.explain(features_df, endpoint="Cell_viability_ATPLite")
+uncertainty = model.predict_with_uncertainty(features_df, n_samples=20)
 ```
 
 ### OligoTox-Transformer
-Fine-tuned [Nucleotide Transformer](https://github.com/instadeepai/nucleotide-transformer) (500M params) with chemical modification cross-attention and MC-Dropout uncertainty.
+Fine-tuned [Nucleotide Transformer](https://github.com/instadeepai/nucleotide-transformer) (500M params) with chemical modification cross-attention and MC-Dropout uncertainty quantification.
 
 ```python
 from models.transformer_model import OligoToxTransformer
-# See notebooks/OligoToxDB_Analysis_Walkthrough.ipynb
+# See notebooks/OligoToxDB_Analysis_Walkthrough.ipynb for full training example
 ```
 
 ### OligoTox-ActiveLearn
-Gaussian Process surrogate with multi-objective Expected Information Gain acquisition for experimental design. Selects which compounds to synthesize next to maximize information gain.
+Gaussian Process surrogate (Matérn ν=2.5) with multi-objective Expected Information Gain acquisition. Selects the next synthesis batch to maximize information gain across all endpoints.
 
 ```python
 from models.active_learning import select_next_batch
@@ -137,7 +152,7 @@ print(result.selected_ids)
 
 ## Benchmarks
 
-Three standardized benchmark splits for community model comparison:
+Three standardized splits for community model comparison:
 
 | Benchmark | Split Type | Task | Primary Metric |
 |---|---|---|---|
@@ -163,7 +178,7 @@ Community leaderboard: [GitHub Discussions](https://github.com/anote-ai/nih-olig
 
 ## External Contributions (OTMRS)
 
-External labs can contribute data following the **OligoTox Minimum Reporting Standard (OTMRS)**:
+External labs can contribute data following the **OligoTox Minimum Reporting Standard (OTMRS)**. The validator checks required fields, controlled vocabularies, purity thresholds, replicate counts, and dose-response coverage.
 
 ```bash
 # Validate your submission before contributing
