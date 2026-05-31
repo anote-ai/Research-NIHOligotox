@@ -18,19 +18,23 @@ import string
 import argparse
 from pathlib import Path
 
+import sys
 import numpy as np
 import pandas as pd
+
+# Import all 47 endpoints from the canonical registry
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from oligotoxdb.endpoints import ENDPOINTS_BY_SYSTEM
 
 BACKBONE_CLASSES = ["PS", "PO", "PMO", "LNA_mix", "PNA", "2F_ANA", "morpholino"]
 SUGAR_MODS = ["DNA", "2OMe", "2F", "LNA", "mixed"]
 CONJUGATES = ["none", "none", "none", "GalNAc", "cholesterol", "lipid"]
 ASSAY_SYSTEMS = ["PHH", "KidneyOrganoid", "PBMC", "Platelet", "MPS"]
+
+# Build endpoint name lists per system from the registry (all 47 endpoints)
 ENDPOINTS = {
-    "PHH": ["Cell_viability_ATPLite", "LDH_release", "ALT_secretion", "Caspase_3_7"],
-    "KidneyOrganoid": ["KIM1_secretion", "NGAL_secretion"],
-    "PBMC": ["IFNa", "IL6", "TNFa", "C3a", "C5a", "TLR9_activation"],
-    "Platelet": ["Platelet_aggregation", "aPTT", "PT"],
-    "MPS": ["Cell_viability_ATPLite", "KIM1_secretion"],
+    system: [ep.name for ep in eps]
+    for system, eps in ENDPOINTS_BY_SYSTEM.items()
 }
 CONCENTRATIONS = [0.01, 0.1, 1.0, 10.0, 50.0, 100.0]
 TIMEPOINTS = {
@@ -97,27 +101,39 @@ def _true_ic50(seq: str, backbone: str, endpoint: str, rng: np.random.Generator)
 
     base_ic50 = 20.0  # µM, default inactive
 
-    if "IFN" in endpoint or "IL6" in endpoint or "TNF" in endpoint or "TLR9" in endpoint:
+    # Immunotoxicity: CpG content and PS backbone drive cytokine responses
+    if any(tok in endpoint for tok in ("IFN", "IL", "TNF", "TLR9", "NK_CD69", "MCP1", "IP10", "GM_CSF")):
         if cpg_count >= 2:
             base_ic50 = float(rng.uniform(0.1, 5.0))
         elif backbone == "PS":
             base_ic50 = float(rng.uniform(5.0, 30.0))
 
-    elif "C3a" in endpoint or "C5a" in endpoint or "Platelet" in endpoint:
+    # Complement / thrombocytopenia: poly-G and high GC drive complement activation
+    elif any(tok in endpoint for tok in ("C3a", "C5a", "C1q", "Platelet", "P_selectin", "CD63")):
         if poly_g >= 4:
             base_ic50 = float(rng.uniform(0.5, 10.0))
         elif backbone == "PS" and gc > 0.6:
             base_ic50 = float(rng.uniform(2.0, 20.0))
 
-    elif "Cell_viability" in endpoint or "LDH" in endpoint or "ALT" in endpoint or "Caspase" in endpoint:
+    # Hepatotoxicity: GC + PS backbone or high CpG
+    elif any(tok in endpoint for tok in ("Cell_viability", "LDH", "ALT", "AST", "Caspase",
+                                          "HMGB1", "ROS", "Lipid", "Mitochondrial", "Bile",
+                                          "Gene_module_hepatotox", "RNAseq", "MPS_ALT")):
         if gc > 0.7 and backbone == "PS":
             base_ic50 = float(rng.uniform(1.0, 15.0))
         elif cpg_count >= 3:
             base_ic50 = float(rng.uniform(5.0, 50.0))
 
-    elif "KIM1" in endpoint or "NGAL" in endpoint:
+    # Nephrotoxicity: PS + long sequences
+    elif any(tok in endpoint for tok in ("KIM1", "NGAL", "Organoid", "Lysosomal",
+                                          "TightJunction", "Gene_module_nephrotox", "MPS_KIM1")):
         if backbone == "PS" and len(seq) > 18:
             base_ic50 = float(rng.uniform(2.0, 25.0))
+
+    # Coagulopathy: affected by PS backbone
+    elif any(tok in endpoint for tok in ("aPTT", "PT", "FactorXa", "Thrombin")):
+        if backbone == "PS":
+            base_ic50 = float(rng.uniform(3.0, 30.0))
 
     # Add noise
     return base_ic50 * float(rng.lognormal(0, 0.3))
