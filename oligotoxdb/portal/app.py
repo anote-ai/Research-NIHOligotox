@@ -32,29 +32,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from oligotoxdb.features import compute_features, OligoFeatures
 from oligotoxdb.database import OligoToxDB
 from oligotoxdb.qc import _four_pl
+from oligotoxdb.endpoints import ENDPOINTS as _ALL_ENDPOINTS
 
 # ── Config ─────────────────────────────────────────────────────────────────
 
 DB_PATH = os.getenv("OLIGOTOXDB_PATH", "oligotoxdb.duckdb")
 MODEL_DIR = os.getenv("OLIGOTOX_MODEL_DIR", "models/xgb")
 
-ENDPOINTS_DISPLAY = {
-    "Cell_viability_ATPLite": "Cell Viability (PHH)",
-    "LDH_release": "LDH Release (PHH)",
-    "ALT_secretion": "ALT Secretion (PHH)",
-    "Caspase_3_7": "Caspase 3/7 (PHH)",
-    "KIM1_secretion": "KIM-1 (Kidney Organoid)",
-    "NGAL_secretion": "NGAL (Kidney Organoid)",
-    "IFNa": "IFN-α (PBMC)",
-    "IL6": "IL-6 (PBMC)",
-    "TNFa": "TNF-α (PBMC)",
-    "C3a": "Complement C3a (PBMC)",
-    "C5a": "Complement C5a (PBMC)",
-    "TLR9_activation": "TLR9 Activation (PBMC)",
-    "Platelet_aggregation": "Platelet Aggregation",
-    "aPTT": "aPTT (Coagulopathy)",
-    "PT": "PT (Coagulopathy)",
-}
+# All 47 endpoints from the canonical registry
+ENDPOINTS_DISPLAY = {ep.name: f"{ep.display} [{ep.assay_system}]" for ep in _ALL_ENDPOINTS}
 
 BACKBONE_CHOICES = ["PS", "PO", "PMO", "LNA_mix", "PNA", "2F_ANA", "morpholino"]
 SUGAR_CHOICES = ["DNA", "2OMe", "2F", "LNA", "mixed"]
@@ -130,8 +116,8 @@ def predict_toxicity(
         for ep, display in ENDPOINTS_DISPLAY.items():
             ic50_col = f"{ep}_ic50_um"
             cls_col = f"{ep}_toxclass"
-            ic50 = float(raw_preds.get(ic50_col, pd.Series([np.nan]))[0])
-            cls = str(raw_preds.get(cls_col, pd.Series(["unknown"]))[0])
+            ic50 = float(raw_preds[ic50_col].iloc[0]) if ic50_col in raw_preds.columns else np.nan
+            cls = str(raw_preds[cls_col].iloc[0]) if cls_col in raw_preds.columns else "unknown"
             rows.append({
                 "Endpoint": display,
                 "Predicted IC50 (µM)": round(ic50, 2) if not np.isnan(ic50) else "N/A",
@@ -347,7 +333,7 @@ Part of the NIH NCATS OligoTox Open Data Challenge | Anote, Inc. | [GitHub](http
         with gr.Tabs():
             # ── Predictor tab ─────────────────────────────────────────────
             with gr.Tab("Toxicity Predictor"):
-                gr.Markdown("Enter an oligonucleotide sequence and modification scheme to get a predicted toxicity profile across all 15 primary endpoints.")
+                gr.Markdown("Enter an oligonucleotide sequence and modification scheme to get a predicted toxicity profile across all 47 endpoints.")
                 with gr.Row():
                     with gr.Column(scale=2):
                         seq_input = gr.Textbox(

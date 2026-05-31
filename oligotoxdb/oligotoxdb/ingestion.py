@@ -235,11 +235,14 @@ def ingest_results_file(
     dr_df["dr_id"] = range(1, len(dr_df) + 1)
     dr_df = dr_df.rename(columns={"ic50": "ic50_um"})
     dr_df["assay_system"] = dr_df["endpoint"].apply(_infer_assay_system)
-    dr_df["n_bio_reps"] = (
-        valid_df.groupby(["oligo_id", "endpoint"])["replicate_bio"].nunique().reindex(
-            dr_df.set_index(["oligo_id", "endpoint"]).index
-        ).values
+    bio_reps = (
+        valid_df.groupby(["oligo_id", "endpoint"])["replicate_bio"]
+        .nunique()
+        .reset_index()
+        .rename(columns={"replicate_bio": "n_bio_reps"})
     )
+    dr_df = dr_df.merge(bio_reps, on=["oligo_id", "endpoint"], how="left")
+    dr_df["n_bio_reps"] = dr_df["n_bio_reps"].fillna(1).astype(int)
     db.insert_dose_response(dr_df)
 
     pass_rate = float(plate_qc_df["passed"].mean()) if len(plate_qc_df) > 0 else 0.0
