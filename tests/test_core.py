@@ -1,6 +1,7 @@
 """Tests for oligotox.core."""
 import pytest
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from oligotox.core import (
@@ -42,7 +43,7 @@ def test_compute_gc_content_empty_raises():
 
 
 def test_compute_cpg_ratio_no_cpg():
-    assert compute_cpg_ratio("ACGT") == 0.0
+    assert compute_cpg_ratio("ATGC") == 0.0
 
 
 def test_compute_cpg_ratio_with_cpg():
