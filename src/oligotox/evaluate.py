@@ -1,121 +1,151 @@
-"""Evaluation metrics for oligonucleotide toxicity prediction models."""
-
 from __future__ import annotations
-
 import math
-from typing import Optional
+from typing import Sequence
+
+from .core import BackboneClass, Oligonucleotide, ToxicityRecord
 
 
-def calibration_error(
-    predicted_probs: list[float],
-    true_labels: list[int],
-    n_bins: int = 10,
-) -> float:
-    """Compute Expected Calibration Error (ECE).
-
-    Bins predictions by confidence and measures mean absolute difference
-    between average confidence and accuracy within each bin.
-
-    Args:
-        predicted_probs: Predicted probabilities in [0, 1].
-        true_labels: Binary ground truth labels (0 or 1).
-        n_bins: Number of equal-width bins.
-
-    Returns:
-        ECE scalar value in [0, 1].
-    """
-    if len(predicted_probs) != len(true_labels):
-        raise ValueError("predicted_probs and true_labels must have the same length.")
-    if not predicted_probs:
-        return 0.0
-
-    n = len(predicted_probs)
-    bin_width = 1.0 / n_bins
-    ece = 0.0
-
-    for b in range(n_bins):
-        low = b * bin_width
-        high = low + bin_width
-        indices = [
-            i for i, p in enumerate(predicted_probs)
-            if (low <= p < high) or (b == n_bins - 1 and p == 1.0)
-        ]
-        if not indices:
-            continue
-        avg_conf = sum(predicted_probs[i] for i in indices) / len(indices)
-        avg_acc = sum(true_labels[i] for i in indices) / len(indices)
-        ece += (len(indices) / n) * abs(avg_conf - avg_acc)
-
-    return ece
-
-
-def aucroc(scores: list[float], labels: list[int]) -> float:
-    """Compute AUC-ROC using the trapezoidal rule via stdlib sort.
-
-    Args:
-        scores: Predicted scores/probabilities.
-        labels: Binary ground truth labels (0 or 1).
-
-    Returns:
-        AUC-ROC value in [0, 1].
-
-    Raises:
-        ValueError: If labels contain only one class.
-    """
-    if len(scores) != len(labels):
-        raise ValueError("scores and labels must have the same length.")
+def aucroc_score(labels: list[int], scores: list[float]) -> float:
+    """Area under the ROC curve via the trapezoidal rule."""
+    if len(set(labels)) < 2:
+        return 0.5
+    pairs = sorted(zip(scores, labels), reverse=True)
     n_pos = sum(labels)
     n_neg = len(labels) - n_pos
     if n_pos == 0 or n_neg == 0:
-        raise ValueError("labels must contain both positive and negative examples.")
-
-    sorted_pairs = sorted(zip(scores, labels), key=lambda x: -x[0])
-    tps = 0
-    fps = 0
+        return 0.5
+    tp = fp = 0
+    prev_fp = prev_tp = 0
     auc = 0.0
-    prev_fps = 0
-    prev_tps = 0
-
-    for _score, label in sorted_pairs:
+    prev_score = None
+    for score, label in pairs:
+        if score != prev_score and prev_score is not None:
+            auc += (fp - prev_fp) * (tp + prev_tp) / 2
+            prev_fp, prev_tp = fp, tp
         if label == 1:
-            tps += 1
+            tp += 1
         else:
-            fps += 1
-        # Trapezoidal rule contribution
-        auc += (fps - prev_fps) * (tps + prev_tps) / 2.0
-        prev_fps = fps
-        prev_tps = tps
-
+            fp += 1
+        prev_score = score
+    auc += (fp - prev_fp) * (tp + prev_tp) / 2
     return auc / (n_pos * n_neg)
 
 
-def model_comparison(results: list[dict]) -> dict:
-    """Compare models and return the best by AUCROC and ECE.
+def calibration_error(
+    labels: list[int],
+    scores: list[float],
+    n_bins: int = 10,
+) -> float:
+    """Expected Calibration Error (ECE) over equal-width probability bins."""
+    bin_size = 1.0 / n_bins
+    ece = 0.0
+    n = len(labels)
+    for b in range(n_bins):
+        low, high = b * bin_size, (b + 1) * bin_size
+        indices = [i for i, s in enumerate(scores) if low <= s < high]
+        if not indices:
+            continue
+        avg_conf = sum(scores[i] for i in indices) / len(indices)
+        avg_acc = sum(labels[i] for i in indices) / len(indices)
+        ece += (len(indices) / n) * abs(avg_conf - avg_acc)
+    return ece
 
-    Args:
-        results: List of dicts with keys: 'model_name', 'aucroc', 'ece'.
 
-    Returns:
-        Dict with 'best_by_aucroc' (model name) and 'best_by_ece' (model name).
-
-    Raises:
-        ValueError: If results list is empty.
-    """
-    if not results:
-        raise ValueError("results list cannot be empty.")
-
-    required_keys = {"model_name", "aucroc", "ece"}
-    for r in results:
-        missing = required_keys - set(r.keys())
-        if missing:
-            raise ValueError(f"Result dict missing keys: {missing}")
-
-    best_aucroc = max(results, key=lambda r: r["aucroc"])
-    best_ece = min(results, key=lambda r: r["ece"])
-
+def model_comparison(
+    labels: list[int],
+    scores_a: list[float],
+    scores_b: list[float],
+) -> dict:
+    """Compare two models by AUROC and ECE."""
     return {
-        "best_by_aucroc": best_aucroc["model_name"],
-        "best_by_ece": best_ece["model_name"],
-        "aucroc_value": best_aucroc["aucroc"],
-        "ece_value": best_ece["ece"],
+        "model_a": {"auroc": aucroc_score(labels, scores_a), "ece": calibration_error(labels, scores_a)},
+        "model_b": {"auroc": aucroc_score(labels, scores_b), "ece": calibration_error(labels, scores_b)},
+    }
+
+
+def endpoint_breakdown(
+    records: list[ToxicityRecord],
+) -> dict[str, dict[str, float]]:
+    """Per-endpoint descriptive stats (mean, min, max, count)."""
+    from collections import defaultdict
+
+    buckets: dict[str, list[float]] = defaultdict(list)
+    for rec in records:
+        buckets[rec.endpoint.value].append(rec.value)
+    result = {}
+    for ep, vals in buckets.items():
+        result[ep] = {
+            "mean": sum(vals) / len(vals),
+            "min": min(vals),
+            "max": max(vals),
+            "count": float(len(vals)),
+        }
+    return result
+
+
+def feature_importance_summary(
+    feature_names: list[str],
+    importances: list[float],
+) -> list[dict]:
+    """Sort features by importance descending."""
+    pairs = sorted(zip(feature_names, importances), key=lambda x: x[1], reverse=True)
+    return [{"feature": f, "importance": v} for f, v in pairs]
+
+
+def sequence_complexity(sequence: str) -> float:
+    """Linguistic complexity of a nucleotide sequence via Shannon entropy.
+
+    Returns entropy in bits (max ~2 bits for perfectly uniform ATGC distribution).
+    Higher values indicate more diverse/complex sequences.
+    """
+    seq = sequence.upper()
+    if not seq:
+        return 0.0
+    counts = {base: seq.count(base) for base in "ATGC"}
+    n = len(seq)
+    entropy = 0.0
+    for c in counts.values():
+        if c > 0:
+            p = c / n
+            entropy -= p * math.log2(p)
+    return entropy
+
+
+def backbone_risk_tier(backbone: BackboneClass) -> str:
+    """Classify backbone chemistry by hepatotoxicity risk tier.
+
+    Based on published case data:
+      high  - PS (phosphorothioate), F2_ANA (2'-F arabino)
+      medium - LNA, PNA
+      low   - PO, PMO, MORPHOLINO
+    """
+    high = {BackboneClass.PS, BackboneClass.F2_ANA}
+    medium = {BackboneClass.LNA, BackboneClass.PNA}
+    if backbone in high:
+        return "high"
+    if backbone in medium:
+        return "medium"
+    return "low"
+
+
+def population_toxicity_summary(
+    oligos: Sequence[Oligonucleotide],
+) -> dict[str, float]:
+    """Dataset-level summary: GC stats, mean complexity, risk-tier distribution."""
+    if not oligos:
+        return {}
+    gc_vals = [o.gc_content for o in oligos]
+    complexities = [sequence_complexity(o.sequence) for o in oligos]
+    tier_counts: dict[str, int] = {"high": 0, "medium": 0, "low": 0}
+    for o in oligos:
+        tier_counts[backbone_risk_tier(o.backbone)] += 1
+    n = len(oligos)
+    return {
+        "mean_gc": sum(gc_vals) / n,
+        "min_gc": min(gc_vals),
+        "max_gc": max(gc_vals),
+        "mean_complexity": sum(complexities) / n,
+        "frac_high_risk": tier_counts["high"] / n,
+        "frac_medium_risk": tier_counts["medium"] / n,
+        "frac_low_risk": tier_counts["low"] / n,
     }
