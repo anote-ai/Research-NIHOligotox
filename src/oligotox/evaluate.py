@@ -1,9 +1,9 @@
 """Evaluation utilities for OligoTox pipeline."""
 from __future__ import annotations
 
-from typing import List, Dict
+from typing import Dict, List
 
-from .core import ToxicityRecord
+from .core import ToxicityEndpoint, ToxicityRecord
 
 
 def aucroc(scores: List[float], labels: List[int]) -> float:
@@ -37,6 +37,19 @@ def aucroc(scores: List[float], labels: List[int]) -> float:
     return float(auc)
 
 
+def auroc_score(scores: List[float], labels: List[int]) -> float:
+    """Alias for aucroc with a more descriptive name.
+
+    Args:
+        scores: Predicted probability scores for the positive class.
+        labels: Binary ground-truth labels (0 or 1).
+
+    Returns:
+        AUC-ROC in [0, 1].  Returns 0.5 if only one class present.
+    """
+    return aucroc(scores, labels)
+
+
 def calibration_error(
     predicted_probs: List[float],
     true_labels: List[int],
@@ -45,10 +58,10 @@ def calibration_error(
     """Expected Calibration Error (ECE)."""
     bins = [[] for _ in range(n_bins)]
     bin_labels: List[List[int]] = [[] for _ in range(n_bins)]
-    for p, l in zip(predicted_probs, true_labels):
+    for p, label in zip(predicted_probs, true_labels):
         idx = min(int(p * n_bins), n_bins - 1)
         bins[idx].append(p)
-        bin_labels[idx].append(l)
+        bin_labels[idx].append(label)
 
     n = len(predicted_probs)
     ece = 0.0
@@ -59,6 +72,60 @@ def calibration_error(
         frac_pos = sum(b_labels) / len(b_labels)
         ece += (len(b_probs) / n) * abs(mean_prob - frac_pos)
     return float(ece)
+
+
+def toxicity_profile_summary(
+    oligo_id: str,
+    records: List[ToxicityRecord],
+    predicted_scores: Dict[str, float],
+) -> Dict[str, object]:
+    """Summarise measured and predicted toxicity for a single oligonucleotide.
+
+    Args:
+        oligo_id: Identifier of the oligonucleotide.
+        records: Measured ToxicityRecords for this oligo (any endpoint).
+        predicted_scores: Dict mapping endpoint name -> predicted probability.
+
+    Returns:
+        Dict containing:
+            oligo_id: str
+            measured: Dict[endpoint -> mean measured value] for available endpoints.
+            predicted: The predicted_scores dict passed in.
+            max_predicted_endpoint: Endpoint with highest predicted risk.
+            overall_risk_level: 'low' / 'moderate' / 'high' / 'very_high'.
+    """
+    oligo_records = [r for r in records if r.oligo_id == oligo_id]
+
+    measured: Dict[str, float] = {}
+    by_endpoint: Dict[str, List[float]] = {}
+    for rec in oligo_records:
+        by_endpoint.setdefault(rec.endpoint.value, []).append(rec.value)
+    for ep, vals in by_endpoint.items():
+        measured[ep] = sum(vals) / len(vals)
+
+    if predicted_scores:
+        max_ep = max(predicted_scores, key=lambda k: predicted_scores[k])
+        max_score = predicted_scores[max_ep]
+    else:
+        max_ep = ""
+        max_score = 0.0
+
+    if max_score < 0.20:
+        risk_level = "low"
+    elif max_score < 0.50:
+        risk_level = "moderate"
+    elif max_score < 0.75:
+        risk_level = "high"
+    else:
+        risk_level = "very_high"
+
+    return {
+        "oligo_id": oligo_id,
+        "measured": measured,
+        "predicted": predicted_scores,
+        "max_predicted_endpoint": max_ep,
+        "overall_risk_level": risk_level,
+    }
 
 
 def model_comparison(results: List[Dict]) -> Dict:

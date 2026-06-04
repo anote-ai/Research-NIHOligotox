@@ -7,9 +7,20 @@ from .core import (
     ToxicityRecord,
     FeatureVector,
     OligotoxPipeline,
+    ToxicityPredictor,
     compute_gc_content,
     compute_cpg_ratio,
+    compute_motif_score,
     extract_features,
+)
+from .evaluate import (
+    aucroc,
+    auroc_score,
+    calibration_error,
+    toxicity_profile_summary,
+    model_comparison,
+    endpoint_breakdown,
+    feature_importance_summary,
 )
 
 __all__ = [
@@ -20,7 +31,16 @@ __all__ = [
     "ToxicityRecord",
     "FeatureVector",
     "OligotoxPipeline",
+    "ToxicityPredictor",
     "compute_gc_content",
     "compute_cpg_ratio",
+    "compute_motif_score",
     "extract_features",
+    "aucroc",
+    "auroc_score",
+    "calibration_error",
+    "toxicity_profile_summary",
+    "model_comparison",
+    "endpoint_breakdown",
+    "feature_importance_summary",
 ]
