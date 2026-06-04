@@ -32,15 +32,16 @@ Our submission — **OligoToxDB** — is a fully open dataset and AI prediction 
 ```
 nih-oligotox/
 ├── OligoTox_Phase2_Submission_Anote.md   # Full Phase 2 narrative document
-└── oligotoxdb/                            # OligoToxDB codebase
-    ├── oligotoxdb/        # Core library (endpoints, features, QC, database, ingestion, omics)
-    ├── models/            # OligoTox-XGB, OligoTox-Transformer, OligoTox-ActiveLearn
-    ├── benchmarks/        # Standardized splits + evaluation metrics
-    ├── portal/            # Gradio web portal (predictor, explorer, dose-response viewer)
-    ├── scripts/           # Synthetic data generation, batch release pipeline
-    ├── notebooks/         # Analysis walkthrough notebook
-    ├── tests/             # 57 unit tests
-    └── README.md          # OligoToxDB technical documentation
+├── oligotoxdb/                            # OligoToxDB codebase
+│   ├── oligotoxdb/        # Core library (endpoints, features, QC, database, ingestion, omics)
+│   ├── models/            # OligoTox-XGB, OligoTox-Transformer, OligoTox-ActiveLearn
+│   ├── benchmarks/        # Standardized splits + evaluation metrics
+│   ├── portal/            # Gradio web portal (predictor, explorer, dose-response viewer)
+│   ├── scripts/           # Synthetic data generation, batch release pipeline
+│   ├── notebooks/         # Analysis walkthrough notebook
+│   ├── tests/             # 57 unit tests
+│   └── README.md          # OligoToxDB technical documentation
+└── src/oligotox/          # Lightweight Python package (see below)
 ```
 
 See **[`OligoTox_Phase2_Submission_Anote.md`](OligoTox_Phase2_Submission_Anote.md)** for the full narrative, methodology, OTMRS specification, and Public Access and Dissemination Plan.
@@ -113,3 +114,38 @@ The [NIH NCATS OligoTox Open Data Challenge](https://oligotox.com) incentivizes 
 
 - **Data**: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — use freely, attribution required
 - **Code**: [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+---
+
+## Python Package (`src/oligotox/`)
+
+A lightweight Python package wrapping the core OligoTox ML pipeline for external use.
+
+### Install
+
+```bash
+pip install -e ".[dev]"
+```
+
+### Quick Start
+
+```python
+from oligotox.data import make_dataset
+from oligotox.core import extract_features, OligotoxPipeline
+from oligotox.evaluate import aucroc
+
+oligos, records = make_dataset(n=100)
+features = [extract_features(o) for o in oligos]
+labels = [int(r.value > 0.5) for r in records]
+
+pipeline = OligotoxPipeline(model_type="xgb")
+pipeline.fit(features[:80], [float(l) for l in labels[:80]])
+scores = pipeline.predict_proba(features[80:])
+print(f"AUC-ROC: {aucroc(scores, labels[80:]):.3f}")
+```
+
+### Run Tests
+
+```bash
+pytest tests/ -v --cov=src
+```
