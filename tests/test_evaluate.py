@@ -1,12 +1,19 @@
 """Tests for oligotox.evaluate."""
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from oligotox.evaluate import (
-    aucroc, calibration_error, model_comparison, endpoint_breakdown,
+    aucroc,
+    calibration_error,
+    model_comparison,
+    endpoint_breakdown,
     feature_importance_summary,
+    sequence_complexity,
+    backbone_risk_tier,
+    population_toxicity_summary,
 )
-from oligotox.core import ToxicityRecord, ToxicityEndpoint
+from oligotox.core import BackboneClass, Oligonucleotide, ToxicityRecord, ToxicityEndpoint
 
 
 def test_aucroc_perfect():
@@ -31,9 +38,6 @@ def test_aucroc_all_same_score():
 
 
 def test_calibration_error_perfect():
-    probs = [0.1, 0.5, 0.9]
-    # perfect if mean_prob == frac_pos per bin
-    # Use all 0.0 probs with all 0 labels => ECE=0
     probs2 = [0.0] * 10
     labels2 = [0] * 10
     ece = calibration_error(probs2, labels2, n_bins=10)
@@ -69,3 +73,46 @@ def test_feature_importance_summary_sorted():
     out = feature_importance_summary(names, imps)
     assert out[0]["feature"] == "len"
     assert out[-1]["feature"] == "cpg"
+
+
+def test_sequence_complexity_uniform():
+    score = sequence_complexity("ATGCATGC")
+    assert score == pytest.approx(2.0, abs=0.01)
+
+
+def test_sequence_complexity_single_base():
+    score = sequence_complexity("AAAAAAA")
+    assert score == pytest.approx(0.0)
+
+
+def test_sequence_complexity_empty():
+    assert sequence_complexity("") == 0.0
+
+
+def test_backbone_risk_tier_ps_high():
+    assert backbone_risk_tier(BackboneClass.PS) == "high"
+
+
+def test_backbone_risk_tier_lna_medium():
+    assert backbone_risk_tier(BackboneClass.LNA) == "medium"
+
+
+def test_backbone_risk_tier_pmo_low():
+    assert backbone_risk_tier(BackboneClass.PMO) == "low"
+
+
+def test_population_toxicity_summary_keys():
+    oligos = [
+        Oligonucleotide(oligo_id="o1", sequence="ATGCATGCAT", backbone=BackboneClass.PS),
+        Oligonucleotide(oligo_id="o2", sequence="GCTAGCTAGC", backbone=BackboneClass.PMO),
+    ]
+    summary = population_toxicity_summary(oligos)
+    for key in ("mean_gc", "mean_complexity", "frac_high_risk", "frac_low_risk"):
+        assert key in summary
+
+
+def test_population_toxicity_summary_empty():
+    assert population_toxicity_summary([]) == {}
+
+
+import pytest

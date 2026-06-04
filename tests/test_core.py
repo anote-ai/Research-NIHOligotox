@@ -54,7 +54,7 @@ def test_extract_features_keys():
     oligo = Oligonucleotide(oligo_id="o1", sequence="ATGCATGCAT", backbone=BackboneClass.LNA)
     fv = extract_features(oligo)
     assert isinstance(fv, FeatureVector)
-    assert len(fv.features) == 6
+    assert len(fv.features) == 7
     assert fv.oligo_id == "o1"
 
 

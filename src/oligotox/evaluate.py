@@ -1,9 +1,10 @@
 """Evaluation utilities for OligoTox pipeline."""
 from __future__ import annotations
 
-from typing import Dict, List
+import math
+from typing import Dict, List, Sequence
 
-from .core import ToxicityEndpoint, ToxicityRecord
+from .core import BackboneClass, Oligonucleotide, ToxicityEndpoint, ToxicityRecord
 
 
 def aucroc(scores: List[float], labels: List[int]) -> float:
@@ -38,15 +39,7 @@ def aucroc(scores: List[float], labels: List[int]) -> float:
 
 
 def auroc_score(scores: List[float], labels: List[int]) -> float:
-    """Alias for aucroc with a more descriptive name.
-
-    Args:
-        scores: Predicted probability scores for the positive class.
-        labels: Binary ground-truth labels (0 or 1).
-
-    Returns:
-        AUC-ROC in [0, 1].  Returns 0.5 if only one class present.
-    """
+    """Alias for aucroc."""
     return aucroc(scores, labels)
 
 
@@ -79,21 +72,7 @@ def toxicity_profile_summary(
     records: List[ToxicityRecord],
     predicted_scores: Dict[str, float],
 ) -> Dict[str, object]:
-    """Summarise measured and predicted toxicity for a single oligonucleotide.
-
-    Args:
-        oligo_id: Identifier of the oligonucleotide.
-        records: Measured ToxicityRecords for this oligo (any endpoint).
-        predicted_scores: Dict mapping endpoint name -> predicted probability.
-
-    Returns:
-        Dict containing:
-            oligo_id: str
-            measured: Dict[endpoint -> mean measured value] for available endpoints.
-            predicted: The predicted_scores dict passed in.
-            max_predicted_endpoint: Endpoint with highest predicted risk.
-            overall_risk_level: 'low' / 'moderate' / 'high' / 'very_high'.
-    """
+    """Summarise measured and predicted toxicity for a single oligonucleotide."""
     oligo_records = [r for r in records if r.oligo_id == oligo_id]
 
     measured: Dict[str, float] = {}
@@ -163,3 +142,60 @@ def feature_importance_summary(
         zip(feature_names, importances), key=lambda x: -x[1]
     )
     return [{"feature": name, "importance": imp} for name, imp in paired]
+
+
+def sequence_complexity(sequence: str) -> float:
+    """Linguistic complexity of a nucleotide sequence via Shannon entropy.
+
+    Returns entropy in bits (max ~2 bits for perfectly uniform ATGC distribution).
+    """
+    seq = sequence.upper()
+    if not seq:
+        return 0.0
+    counts = {base: seq.count(base) for base in "ATGC"}
+    n = len(seq)
+    entropy = 0.0
+    for c in counts.values():
+        if c > 0:
+            p = c / n
+            entropy -= p * math.log2(p)
+    return entropy
+
+
+def backbone_risk_tier(backbone: BackboneClass) -> str:
+    """Classify backbone chemistry by hepatotoxicity risk tier.
+
+    high  - PS, F2_ANA
+    medium - LNA, PNA
+    low   - PO, PMO, MORPHOLINO
+    """
+    high = {BackboneClass.PS, BackboneClass.F2_ANA}
+    medium = {BackboneClass.LNA, BackboneClass.PNA}
+    if backbone in high:
+        return "high"
+    if backbone in medium:
+        return "medium"
+    return "low"
+
+
+def population_toxicity_summary(
+    oligos: Sequence[Oligonucleotide],
+) -> dict[str, float]:
+    """Dataset-level summary: GC stats, mean complexity, risk-tier distribution."""
+    if not oligos:
+        return {}
+    gc_vals = [o.gc_content for o in oligos]
+    complexities = [sequence_complexity(o.sequence) for o in oligos]
+    tier_counts: dict[str, int] = {"high": 0, "medium": 0, "low": 0}
+    for o in oligos:
+        tier_counts[backbone_risk_tier(o.backbone)] += 1
+    n = len(oligos)
+    return {
+        "mean_gc": sum(gc_vals) / n,
+        "min_gc": min(gc_vals),
+        "max_gc": max(gc_vals),
+        "mean_complexity": sum(complexities) / n,
+        "frac_high_risk": tier_counts["high"] / n,
+        "frac_medium_risk": tier_counts["medium"] / n,
+        "frac_low_risk": tier_counts["low"] / n,
+    }
