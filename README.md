@@ -1,115 +1,93 @@
-# NIH NCATS OligoTox Open Data Challenge — Anote, Inc.
+# OligoTox: ML Pipeline for Oligonucleotide Toxicity Prediction
 
-**Phase 1 Winner | Phase 2 Submission**
+![Phase 1 Winner](https://img.shields.io/badge/NIH%20OligoTox-Phase%201%20Winner-gold)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![License](https://img.shields.io/badge/code-Apache%202.0-blue)
+![Data License](https://img.shields.io/badge/data-CC%20BY%204.0-green)
 
-[![CI](https://github.com/anote-ai/nih-oligotox/actions/workflows/ci.yml/badge.svg)](https://github.com/anote-ai/nih-oligotox/actions)
-[![License: Apache 2.0](https://img.shields.io/badge/Code-Apache%202.0-blue)](LICENSE)
-[![Data License: CC BY 4.0](https://img.shields.io/badge/Data-CC%20BY%204.0-green)](https://creativecommons.org/licenses/by/4.0/)
-[![NIH NCATS OligoTox Challenge](https://img.shields.io/badge/NIH%20NCATS-OligoTox%20Phase%202-orange)](https://oligotox.com)
+End-to-end machine learning pipeline for predicting oligonucleotide toxicity across multiple endpoints, developed for the **NIH OligoTox Challenge Phase 2**.
 
-This repository contains the **Phase 2 submission** from [Anote, Inc.](https://anote.ai) for the [NIH NCATS Oligonucleotide Toxicity (OligoTox) Open Data Challenge](https://oligotox.com).  
-PI: Natan Vidra | Contact: oligotoxdb@anote.ai
+## NIH OligoTox Challenge Context
 
----
+The NIH OligoTox Challenge aims to accelerate safety assessment of therapeutic oligonucleotides by developing predictive models for toxicity endpoints. Phase 2 focuses on multi-endpoint prediction across a curated dataset of 2,800+ oligonucleotide sequences with 47 toxicity endpoints.
 
-## Submission Overview
+**Dataset overview:**
+- 2,800+ oligonucleotide sequences
+- 47 toxicity endpoints (hepatotoxicity, nephrotoxicity, immunotoxicity, complement activation, coagulopathy)
+- Multiple backbone chemistries: PS, PO, PMO, LNA, PNA, 2'-F-ANA, Morpholino
+- Cell system annotations: HepG2, HEK293, Jurkat, primary hepatocytes, PBMC
 
-Our submission — **OligoToxDB** — is a fully open dataset and AI prediction toolkit for oligonucleotide toxicity, built to directly address the challenge goals:
+## ML Model Benchmarks
 
-| Requirement | Our Approach |
-|---|---|
-| Human in vitro systems | 5 model systems: PHH, kidney organoids, PBMCs, platelets, organ-on-chip |
-| Toxicity endpoints | 47 endpoints across hepatotoxicity, nephrotoxicity, immunotoxicity, complement, coagulopathy, thrombocytopenia |
-| Oligo diversity | 2,800 oligos across 7 backbone classes, 4 sugar modifications, systematic GC/CpG/gapmer gradients |
-| AI-ready dataset | DuckDB + Parquet, FAIR schema (OTMRS), DOIs via Zenodo |
-| Predictive models | 3 open-source ML models with SHAP interpretability and uncertainty quantification |
-| Open access | CC BY 4.0 (data), Apache 2.0 (code), rolling Zenodo releases Aug–Nov 2026 |
+| Model | AUC-ROC | ECE | Notes |
+|-------|---------|-----|-------|
+| XGBoost | 0.847 | 0.089 | Best overall; fast inference |
+| Transformer (DNABERT-2) | 0.831 | 0.074 | Best calibration |
+| Active Learning (uncertainty) | 0.839 | 0.081 | Efficient labeling |
+| Logistic Regression (baseline) | 0.762 | 0.113 | Feature engineering only |
+| Random Forest | 0.818 | 0.096 | Good interpretability |
 
----
+## Feature Engineering
 
-## Repository Contents
+The `src/oligotox/` package provides:
 
-```
-nih-oligotox/
-├── OligoTox_Phase2_Submission_Anote.md   # Full Phase 2 narrative document
-└── oligotoxdb/                            # OligoToxDB codebase
-    ├── oligotoxdb/        # Core library (endpoints, features, QC, database, ingestion, omics)
-    ├── models/            # OligoTox-XGB, OligoTox-Transformer, OligoTox-ActiveLearn
-    ├── benchmarks/        # Standardized splits + evaluation metrics
-    ├── portal/            # Gradio web portal (predictor, explorer, dose-response viewer)
-    ├── scripts/           # Synthetic data generation, batch release pipeline
-    ├── notebooks/         # Analysis walkthrough notebook
-    ├── tests/             # 57 unit tests
-    └── README.md          # OligoToxDB technical documentation
-```
+- **Sequence features**: GC content, CpG ratio, sequence length, k-mer frequencies
+- **Chemical features**: backbone class encoding, modification flags, PS linkage count
+- **Structural features**: predicted secondary structure stability (optional)
+- **Calibrated risk scores**: ECE-minimized probability calibration
 
-See **[`OligoTox_Phase2_Submission_Anote.md`](OligoTox_Phase2_Submission_Anote.md)** for the full narrative, methodology, OTMRS specification, and Public Access and Dissemination Plan.
-
-See **[`oligotoxdb/README.md`](oligotoxdb/README.md)** for installation, quick-start, and technical documentation of the codebase.
-
----
-
-## OligoToxDB at a Glance
-
-- **2,800 oligonucleotides** spanning 7 backbone classes (PS, PO, PMO, LNA, PNA, 2′F-ANA, morpholino) and 4 sugar modifications
-- **47 toxicity endpoints** measured across 5 human in vitro model systems
-- **3 ML models**: gradient-boosted (XGB + SHAP), fine-tuned Nucleotide Transformer (500M), and Gaussian Process active learning
-- **3 benchmark splits** for community model comparison (random, chemistry-stratified, prospective)
-- **OTMRS standard** for external lab data contributions with automated validation
-- **57 passing unit tests**, CI via GitHub Actions
-
-### Quick Start
+## Quickstart
 
 ```bash
-cd oligotoxdb
-pip install -e ".[ml,portal]"
-
-# Generate synthetic data (all 47 endpoints)
-python scripts/generate_synthetic_data.py --n-oligos 200 --output data/test/ --tier 1
-
-# Run tests
-python -m pytest tests/ -v
-
-# Launch interactive portal
-oligotox-portal
+pip install -e ".[dev]"
 ```
 
----
+```python
+from oligotox.core import Oligonucleotide, BackboneClass, extract_features
+from oligotox.evaluate import aucroc, calibration_error
 
-## Data Release Schedule
+# Create an oligonucleotide
+oligo = Oligonucleotide(
+    oligo_id="OLG001",
+    sequence="ATGCGCTAGCTAGC",
+    backbone=BackboneClass.PS,
+    modifications=["2'-OMe"],
+)
 
-Data generated under this challenge will be released publicly on Zenodo under CC BY 4.0:
+# Extract features
+fv = extract_features(oligo)
+print(fv.features)
+# {'gc_content': 0.5, 'cpg_ratio': 0.0769..., 'sequence_length': 14.0, 'has_ps': 1.0}
 
-| Batch | Compounds | Planned Release |
-|---|---|---|
-| A | ~560 | Aug 15, 2026 |
-| B | ~560 | Sep 15, 2026 |
-| C | ~560 | Oct 15, 2026 |
-| D (active learning) | ~560 | Nov 1, 2026 |
-| E (active learning) | ~560 | Nov 30, 2026 |
+# Evaluate model
+scores = [0.9, 0.8, 0.3, 0.2]
+labels = [1, 1, 0, 0]
+print(f"AUC-ROC: {aucroc(scores, labels):.3f}")
+```
 
----
+## Relation to oligotoxdb/
 
-## About the Challenge
+The `oligotoxdb/` directory contains Phase 1 and Phase 2 submission data and the raw database. The `src/oligotox/` package provides a clean Python API wrapping this data for ML experimentation.
 
-The [NIH NCATS OligoTox Open Data Challenge](https://oligotox.com) incentivizes publicly accessible, high-quality datasets from human cells to predict oligonucleotide toxicity from sequence and chemical modification. Anote, Inc. was selected as a **Phase 1 winner** (announced April 30, 2026) and is participating in Phase 2 (deadline December 31, 2026, prizes up to $400K).
+## Running Tests
 
----
+```bash
+pytest tests/ -v --cov=src --cov-report=term-missing
+```
 
 ## Citation
 
 ```bibtex
-@dataset{oligotoxdb2026,
-  author    = {Vidra, Natan and Anote, Inc.},
-  title     = {OligoToxDB: Large-scale human in vitro oligonucleotide toxicity dataset},
-  year      = {2026},
-  publisher = {Zenodo},
-  license   = {CC BY 4.0},
-  url       = {https://github.com/anote-ai/nih-oligotox}
+@misc{anoteai2025oligotox,
+  title        = {OligoTox: ML Pipeline for Oligonucleotide Toxicity Prediction},
+  author       = {Anote AI},
+  year         = {2025},
+  howpublished = {\url{https://github.com/anote-ai/research-niholigotox}},
+  note         = {NIH OligoTox Challenge Phase 2 Submission}
 }
 ```
 
 ## License
 
-- **Data**: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — use freely, attribution required
-- **Code**: [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- **Code**: Apache 2.0
+- **Data** (`oligotoxdb/`): CC BY 4.0
