@@ -1,6 +1,7 @@
 """Tests for oligotox.evaluate."""
 import sys
 import os
+import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from oligotox.evaluate import (
@@ -113,6 +114,3 @@ def test_population_toxicity_summary_keys():
 
 def test_population_toxicity_summary_empty():
     assert population_toxicity_summary([]) == {}
-
-
-import pytest
