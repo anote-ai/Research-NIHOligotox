@@ -7,7 +7,7 @@
 [![Data License: CC BY 4.0](https://img.shields.io/badge/Data-CC%20BY%204.0-green)](https://creativecommons.org/licenses/by/4.0/)
 [![NIH NCATS OligoTox Challenge](https://img.shields.io/badge/NIH%20NCATS-OligoTox%20Phase%202-orange)](https://oligotox.com)
 
-This repository contains the **Phase 2 submission** from [Anote, Inc.](https://anote.ai) for the [NIH NCATS Oligonucleotide Toxicity (OligoTox) Open Data Challenge](https://oligotox.com).  
+This repository contains the **Phase 2 submission** from [Anote, Inc.](https://anote.ai) for the [NIH NCATS Oligonucleotide Toxicity (OligoTox) Open Data Challenge](https://oligotox.com).
 PI: Natan Vidra | Contact: oligotoxdb@anote.ai
 
 ---
