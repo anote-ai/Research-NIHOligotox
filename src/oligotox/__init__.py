@@ -10,7 +10,7 @@ from oligotox.core import (
     compute_cpg_ratio,
     extract_features,
 )
-from oligotox.evaluate import calibration_error, aucroc, model_comparison
+from oligotox.evaluate import calibration_error, aucroc_score, model_comparison
 
 __all__ = [
     "BackboneClass",
@@ -22,7 +22,7 @@ __all__ = [
     "compute_cpg_ratio",
     "extract_features",
     "calibration_error",
-    "aucroc",
+    "aucroc_score",
     "model_comparison",
 ]
 
