@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import pytest
-from oligotox.core import BackboneClass, Oligonucleotide
+from oligotox.core import BackboneClass, Oligonucleotide, ToxicityEndpoint, ToxicityRecord
 from oligotox.evaluate import (
     aucroc_score,
     calibration_error,
@@ -49,10 +49,9 @@ def test_model_comparison_returns_both_keys():
 
 
 def test_endpoint_breakdown_structure():
-    from oligotox.core import ToxicityEndpoint, ToxicityRecord
     records = [
-        ToxicityRecord(oligo_id="o1", endpoint=ToxicityEndpoint.HEPATOTOXICITY, value=0.7),
-        ToxicityRecord(oligo_id="o2", endpoint=ToxicityEndpoint.HEPATOTOXICITY, value=0.3),
+        ToxicityRecord(oligo_id="o1", endpoint=ToxicityEndpoint.HEPATOTOXICITY, value=0.7, cell_system="PHH"),
+        ToxicityRecord(oligo_id="o2", endpoint=ToxicityEndpoint.HEPATOTOXICITY, value=0.3, cell_system="PHH"),
     ]
     bd = endpoint_breakdown(records)
     assert "HEPATOTOXICITY" in bd

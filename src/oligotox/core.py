@@ -75,10 +75,13 @@ def compute_gc_content(sequence: str) -> float:
         sequence: Nucleotide sequence string (case-insensitive).
 
     Returns:
-        GC fraction in [0, 1], or 0.0 for empty sequences.
+        GC fraction in [0, 1].
+
+    Raises:
+        ValueError: If sequence is empty.
     """
     if not sequence:
-        return 0.0
+        raise ValueError("sequence cannot be empty")
     seq_upper = sequence.upper()
     gc_count = seq_upper.count("G") + seq_upper.count("C")
     return gc_count / len(seq_upper)
@@ -109,17 +112,23 @@ def extract_features(oligo: Oligonucleotide) -> FeatureVector:
         - cpg_ratio: CpG dinucleotide frequency
         - sequence_length: number of bases
         - has_ps: 1.0 if backbone is PS else 0.0
+        - is_lna: 1.0 if backbone is LNA else 0.0
+        - is_pmo: 1.0 if backbone is PMO else 0.0
+        - modification_count: number of chemical modifications
 
     Args:
         oligo: Oligonucleotide instance.
 
     Returns:
-        FeatureVector with extracted numeric features.
+        FeatureVector with 7 extracted numeric features.
     """
     features: dict[str, float] = {
         "gc_content": compute_gc_content(oligo.sequence),
         "cpg_ratio": compute_cpg_ratio(oligo.sequence),
         "sequence_length": float(len(oligo.sequence)),
         "has_ps": 1.0 if oligo.backbone == BackboneClass.PS else 0.0,
+        "is_lna": 1.0 if oligo.backbone == BackboneClass.LNA else 0.0,
+        "is_pmo": 1.0 if oligo.backbone == BackboneClass.PMO else 0.0,
+        "modification_count": float(len(oligo.modifications)),
     }
     return FeatureVector(oligo_id=oligo.oligo_id, features=features)
