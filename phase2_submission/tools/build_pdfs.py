@@ -95,11 +95,11 @@ styles = {
     ),
     "ul_item": ParagraphStyle(
         "ul_item", fontName=FONT, fontSize=FONT_SIZE, leading=LEADING,
-        leftIndent=18, spaceAfter=4,
+        leftIndent=20, bulletIndent=6, spaceAfter=5,
     ),
     "ol_item": ParagraphStyle(
         "ol_item", fontName=FONT, fontSize=FONT_SIZE, leading=LEADING,
-        leftIndent=20, spaceAfter=4,
+        leftIndent=22, bulletIndent=4, spaceAfter=5,
     ),
     "callout": ParagraphStyle(
         "callout", fontName=FONT, fontSize=9.7, leading=13.2, textColor=colors.HexColor("#5C3E0A"),
@@ -176,9 +176,13 @@ def build_flowables(md_text: str) -> tuple[list, list, list[tuple[str, str]]]:
     lines = md_text.splitlines()
     i = 0
     n = len(lines)
-    list_buffer: list[tuple[str, str]] = []
+    list_buffer: list[list[str]] = []  # mutable [kind, text] pairs so continuation lines can extend text
     meta_pairs: list[tuple[str, str]] = []
     title_done = False
+
+    NEW_BLOCK_RE = re.compile(
+        r"^(\|)|^-{3,}$|^>|^#{1,3}\s+|^[-*]\s+|^\d+\.\s+"
+    )
 
     def flush_list():
         nonlocal list_buffer
@@ -187,10 +191,10 @@ def build_flowables(md_text: str) -> tuple[list, list, list[tuple[str, str]]]:
         ol_counter = 0
         for kind, text in list_buffer:
             if kind == "ul":
-                flow.append(Paragraph(f"•&nbsp;&nbsp;{inline(text)}", styles["ul_item"]))
+                flow.append(Paragraph(inline(text), styles["ul_item"], bulletText="•"))
             else:
                 ol_counter += 1
-                flow.append(Paragraph(f"{ol_counter}.&nbsp;&nbsp;{inline(text)}", styles["ol_item"]))
+                flow.append(Paragraph(inline(text), styles["ol_item"], bulletText=f"{ol_counter}."))
         flow.append(Spacer(1, 4))
         list_buffer = []
 
@@ -269,19 +273,32 @@ def build_flowables(md_text: str) -> tuple[list, list, list[tuple[str, str]]]:
 
         m = re.match(r"^[-*]\s+(.*)$", stripped)
         if m:
-            list_buffer.append(("ul", m.group(1)))
+            list_buffer.append(["ul", m.group(1)])
             i += 1
             continue
 
         m = re.match(r"^\d+\.\s+(.*)$", stripped)
         if m:
-            list_buffer.append(("ol", m.group(1)))
+            list_buffer.append(["ol", m.group(1)])
             i += 1
             continue
 
-        flush_list()
-        flow.append(Paragraph(inline(stripped), styles["body"]))
+        # A plain line that doesn't start a new block: it's a soft-wrapped continuation
+        # of whatever is currently open (a list item, or — if none — a paragraph).
+        if list_buffer:
+            list_buffer[-1][1] += " " + stripped
+            i += 1
+            continue
+
+        para_lines = [stripped]
         i += 1
+        while i < n:
+            nxt = lines[i].strip()
+            if not nxt or NEW_BLOCK_RE.match(nxt):
+                break
+            para_lines.append(nxt)
+            i += 1
+        flow.append(Paragraph(inline(" ".join(para_lines)), styles["body"]))
 
     flush_list()
     return title_flow, flow, meta_pairs
@@ -324,17 +341,17 @@ def make_canvas_factory(short_title: str, draft_footer: bool):
         def _draw_furniture(self, total_pages):
             page_num = self._pageNumber
             w, h = letter
-            self.setStrokeColor(RULE)
-            self.setLineWidth(0.5)
-            self.line(1 * inch, 0.75 * inch, w - 1 * inch, 0.75 * inch)
-            self.setFont(FONT, 8)
-            self.setFillColor(MUTED)
-            self.drawString(1 * inch, 0.58 * inch, short_title)
-            self.drawRightString(w - 1 * inch, 0.58 * inch, f"Page {page_num} of {total_pages}")
             if draft_footer:
                 self.setFillColor(WARN_BORDER)
                 self.setFont(FONT_BOLD, 7.5)
-                self.drawCentredString(w / 2, 0.58 * inch, "DRAFT — PENDING REAL EXPERIMENTAL DATA")
+                self.drawCentredString(w / 2, 0.82 * inch, "DRAFT — PENDING REAL EXPERIMENTAL DATA")
+            self.setStrokeColor(RULE)
+            self.setLineWidth(0.5)
+            self.line(1 * inch, 0.72 * inch, w - 1 * inch, 0.72 * inch)
+            self.setFont(FONT, 8)
+            self.setFillColor(MUTED)
+            self.drawString(1 * inch, 0.55 * inch, short_title)
+            self.drawRightString(w - 1 * inch, 0.55 * inch, f"Page {page_num} of {total_pages}")
 
     return NumberedCanvas
 

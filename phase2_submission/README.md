@@ -6,9 +6,9 @@ placeholder.
 
 | # | Required part | Source | Formatted PDF | Status |
 |---|---|---|---|---|
-| 1 | Narrative document (≤12pp) | `01_narrative_document.md` | `pdf/01_narrative_document.pdf` (4pp) | Structure done; findings sections (1, 2, 4, 5, 6) are placeholders — **not submittable until real data exists** |
+| 1 | Narrative document (≤12pp) | `01_narrative_document.md` | `pdf/01_narrative_document.pdf` (6pp) | Sections 3, 5, 6 (process, gap analysis, modeling plan) are fully written — they don't depend on results. Sections 1, 2, 4 are placeholders — **not submittable until real data exists** |
 | 2 | Methodology document (≤5pp) | `02_methodology_document.md` | `pdf/02_methodology_document.pdf` (3pp) | Protocol drafted; needs confirmation of what was actually run |
-| 3 | Public Access & Dissemination Plan (≤5pp) | `03_public_access_and_dissemination_plan.md` | `pdf/03_public_access_and_dissemination_plan.pdf` (4pp) | Largely submittable as-is (describes commitments, not results) |
+| 3 | Public Access & Dissemination Plan (≤5pp) | `03_public_access_and_dissemination_plan.md` | `pdf/03_public_access_and_dissemination_plan.pdf` (3pp) | Largely submittable as-is (describes commitments, not results) |
 | 4 | Dataset (schema + raw data, no page limit) | `dataset/data_dictionary_and_schema.md`, `dataset/README_raw_data_access.md` | — (data files, not a PDF) | Schema fully defined and pipeline-tested; **real experimental data does not exist yet** |
 | — | Registration form | Download from Challenge.gov "Resources" tab | — | Not started — external form, not generated here |
 | — | Submission email | `email_draft.md` | — | Template ready; **do not send until the dataset is real** |
