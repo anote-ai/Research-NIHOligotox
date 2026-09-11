@@ -559,7 +559,7 @@ Data will be released in rolling batches — not held until project completion:
 - CC BY 4.0 license on all datasets: attribution required, all uses permitted including commercial
 - Apache 2.0 on all code: permissive, patent-grant included
 - Detailed data dictionaries, codebooks, and usage examples included
-- Contact point for data questions: oligotoxdb@anote.ai
+- Contact point for data questions: nvidra@anote.ai
 
 ### 10.5 Community Engagement & Dissemination
 
@@ -800,5 +800,5 @@ The following fields are required for any experimental oligo toxicity record to 
 
 ---
 
-*Submission prepared by Natan Vidra, Anote, Inc. | oligotoxdb@anote.ai*  
+*Submission prepared by Natan Vidra, Anote, Inc. | nvidra@anote.ai*  
 *Building on Phase 1 Ideation Submission, awarded by NIH NCATS OligoTox Open Data Challenge*

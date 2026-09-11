@@ -428,7 +428,7 @@ If you use OligoToxDB in your research, please cite:
 > Vidra N. et al. (2026). OligoToxDB: A large-scale open dataset for AI-driven oligonucleotide toxicity prediction. *Scientific Data*. DOI: pending.
 
 ### Contact
-oligotoxdb@anote.ai | [GitHub Issues](https://github.com/anote-ai/oligotox-predict/issues)
+nvidra@anote.ai | [GitHub Issues](https://github.com/anote-ai/oligotox-predict/issues)
 
 ### License
 Data: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Code: [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)

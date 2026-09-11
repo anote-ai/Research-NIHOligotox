@@ -8,7 +8,7 @@
 [![NIH NCATS OligoTox Challenge](https://img.shields.io/badge/NIH%20NCATS-OligoTox%20Phase%202-orange)](https://oligotox.com)
 
 This repository contains the **Phase 2 submission** from [Anote, Inc.](https://anote.ai) for the [NIH NCATS Oligonucleotide Toxicity (OligoTox) Open Data Challenge](https://oligotox.com).
-PI: Natan Vidra | Contact: oligotoxdb@anote.ai
+PI: Natan Vidra | Contact: nvidra@anote.ai
 
 ---
 

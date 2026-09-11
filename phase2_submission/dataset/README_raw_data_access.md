@@ -38,4 +38,4 @@ downloaded/attached data.]*
 
 ## Contact for Data Access Issues
 
-Natan Vidra, Anote, Inc. — oligotoxdb@anote.ai
+Natan Vidra, Anote, Inc. — nvidra@anote.ai

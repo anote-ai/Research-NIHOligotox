@@ -38,7 +38,7 @@
 > Best regards,
 > Natan Vidra
 > Anote, Inc.
-> oligotoxdb@anote.ai
+> nvidra@anote.ai
 
 ---
 

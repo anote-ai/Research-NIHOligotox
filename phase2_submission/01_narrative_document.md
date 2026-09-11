@@ -194,4 +194,4 @@ the above approaches were actually tried.]*
 
 ---
 
-*Prepared by Natan Vidra, Anote, Inc. Contact: oligotoxdb@anote.ai*
+*Prepared by Natan Vidra, Anote, Inc. Contact: nvidra@anote.ai*

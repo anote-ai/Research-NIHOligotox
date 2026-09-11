@@ -287,7 +287,7 @@ Code: [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Contact
 
-oligotoxdb@anote.ai | [GitHub](https://github.com/anote-ai/nih-oligotox)
+nvidra@anote.ai | [GitHub](https://github.com/anote-ai/nih-oligotox)
 """
     card_path = output_dir / "dataset_card.md"
     card_path.write_text(card)

@@ -4,10 +4,10 @@
 **Submission target:** Single PDF, ≤5 pages, 8.5"×11", ≥1" margins, ≥11pt Arial, line spacing ≥1.0
 
 > Per the Rules section of the Challenge Announcement, winning this prize requires agreeing to
-> abide by the terms of this PADP, and NIH intends to publicly post it. This draft is written to
-> be submittable largely as-is (the PADP describes *commitments*, not experimental results), but
-> should be reviewed once the actual dataset composition/scale is final so repository/format
-> references match reality.
+> abide by the terms of this PADP, and NIH intends to publicly post it. This document describes
+> *commitments*, not experimental results, so it does not depend on the dataset's final size or
+> composition — only the repository names in Section 2 should be double-checked against what was
+> actually used once the dataset is deposited.
 
 ## 1. Overview
 
@@ -21,8 +21,9 @@ embargo beyond a short rolling-release schedule, and no registration barrier to 
 *(Addresses: "how winners will disseminate information about the solution and make the
 solution... available under non-exclusive licenses for research purposes.")*
 
-- **Primary data repository:** [Zenodo — DOI-assigned] for compound registry, computed
-  features, assay results, and derived statistics, in CSV/Parquet format.
+- **Primary data repository:** Zenodo (a persistent DOI is assigned automatically at deposit)
+  for compound registry, computed features, assay results, and derived statistics, in
+  CSV/Parquet format.
 - **Domain-specific repositories:** raw transcriptomics to GEO (NCBI), raw proteomics to PRIDE
   Archive (EBI), each in the community-standard raw format (FASTQ, mzML respectively).
 - **Data dictionary and schema:** published alongside the dataset (see
@@ -100,9 +101,11 @@ that:
 
 - Long-term archival hosts (Zenodo, GEO, PRIDE) chosen specifically for multi-decade
   preservation commitments independent of any single organization's continued operation.
-- Anote commits to maintaining active repositories/tooling for a minimum of [N] years post-award,
-  with governance/maintenance transfer plan (Section 3, Scenario C) as a backstop beyond that.
+- Anote commits to maintaining active repositories/tooling for a minimum of 3 years post-award,
+  with the governance/maintenance transfer plan (Section 3, Scenario C) as a backstop beyond
+  that, on top of the Zenodo/GEO/PRIDE archival commitments in Section 3, Scenario A, which do
+  not depend on Anote's continued operation at all.
 
 ---
 
-*Prepared by Natan Vidra, Anote, Inc. Contact: oligotoxdb@anote.ai*
+*Prepared by Natan Vidra, Anote, Inc. Contact: nvidra@anote.ai*

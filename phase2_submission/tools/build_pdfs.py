@@ -60,7 +60,7 @@ DOCS = [
          page_limit=12, draft_footer=True),
     dict(src="02_methodology_document.md", out="02_methodology_document.pdf",
          short_title="OligoTox Phase 2 — Methodology Document",
-         page_limit=5, draft_footer=True),
+         page_limit=5, draft_footer=False),
     dict(src="03_public_access_and_dissemination_plan.md",
          out="03_public_access_and_dissemination_plan.pdf",
          short_title="OligoTox Phase 2 — Public Access and Dissemination Plan",

@@ -209,4 +209,4 @@ See [Appendix C of the Phase 2 submission](../OligoTox_Phase2_Submission_Anote.m
 
 ## Contact
 
-oligotoxdb@anote.ai | [GitHub Issues](https://github.com/anote-ai/nih-oligotox/issues)
+nvidra@anote.ai | [GitHub Issues](https://github.com/anote-ai/nih-oligotox/issues)
