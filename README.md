@@ -44,7 +44,12 @@ nih-oligotox/
 └── src/oligotox/          # Lightweight Python package (see below)
 ```
 
-See **[`OligoTox_Phase2_Submission_Anote.md`](OligoTox_Phase2_Submission_Anote.md)** for the full narrative, methodology, OTMRS specification, and Public Access and Dissemination Plan.
+See **[`OligoTox_Phase2_Submission_Anote.md`](OligoTox_Phase2_Submission_Anote.md)** for the full combined narrative, methodology, OTMRS specification, and Public Access and Dissemination Plan (background/design reference).
+
+See **[`phase2_submission/`](phase2_submission/)** for the actual submission package, split into
+the four parts NCATS requires (narrative document, methodology document, PADP, dataset), with a
+status tracker (`phase2_submission/README.md`) showing what's finalized vs. still pending real
+experimental data.
 
 See **[`oligotoxdb/README.md`](oligotoxdb/README.md)** for installation, quick-start, and technical documentation of the codebase.
 
