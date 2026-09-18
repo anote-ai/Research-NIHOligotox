@@ -1,17 +1,39 @@
 # Phase 2 Submission Package — Status
 
 This folder splits the previously combined `OligoTox_Phase2_Submission_Anote.md` into the four
-parts NCATS actually requires, formats them to NIH's PDF spec, and tracks what's real vs.
-placeholder.
+parts NCATS actually requires, formats them to NIH's PDF spec (plus editable `.docx` copies),
+and tracks what's real vs. placeholder.
 
-| # | Required part | Source | Formatted PDF | Status |
-|---|---|---|---|---|
-| 1 | Narrative document (≤12pp) | `01_narrative_document.md` | `pdf/01_narrative_document.pdf` (6pp) | **Finalized:** Sections 3, 5, 6 (process, gap analysis, modeling plan). **Pending real data:** Sections 1, 2, 4 — not submittable until filled from actual results |
-| 2 | Methodology document (≤5pp) | `02_methodology_document.md` | `pdf/02_methodology_document.pdf` (3pp) | **Finalized** — concrete protocol (vendors, concentrations, timepoints, replicates); only needs a check against actual execution if anything is dropped/changed in practice |
-| 3 | Public Access & Dissemination Plan (≤5pp) | `03_public_access_and_dissemination_plan.md` | `pdf/03_public_access_and_dissemination_plan.pdf` (3pp) | **Finalized** — submittable as-is |
-| 4 | Dataset (schema + raw data, no page limit) | `dataset/data_dictionary_and_schema.md`, `dataset/README_raw_data_access.md` | — (data files, not a PDF) | Schema fully defined and pipeline-tested; **real experimental data does not exist yet — the only remaining placeholder** |
-| — | Registration form | Download from Challenge.gov "Resources" tab | — | Not started — external form, not generated here |
-| — | Submission email | `email_draft.md` | — | Template ready with `nvidra@anote.ai`; **do not send until the dataset is real** |
+| # | Required part | Source | Formatted PDF | Editable .docx | Status |
+|---|---|---|---|---|---|
+| 1 | Narrative document (≤12pp) | `01_narrative_document.md` | `pdf/01_narrative_document.pdf` (6pp) | `docx/01_narrative_document.docx` | **Finalized:** Sections 3, 5, 6 (process, gap analysis, modeling plan). **Pending real data:** Sections 1, 2, 4 — not submittable until filled from actual results |
+| 2 | Methodology document (≤5pp) | `02_methodology_document.md` | `pdf/02_methodology_document.pdf` (3pp) | `docx/02_methodology_document.docx` | **Finalized** — concrete protocol (vendors, concentrations, timepoints, replicates); only needs a check against actual execution if anything is dropped/changed in practice |
+| 3 | Public Access & Dissemination Plan (≤5pp) | `03_public_access_and_dissemination_plan.md` | `pdf/03_public_access_and_dissemination_plan.pdf` (3pp) | `docx/03_public_access_and_dissemination_plan.docx` | **Finalized** — submittable as-is |
+| 4 | Dataset (schema + raw data, no page limit) | `dataset/data_dictionary_and_schema.md`, `dataset/README_raw_data_access.md` | — (data files, not a PDF) | — | Schema fully defined and pipeline-tested; **real experimental data does not exist yet — the only remaining placeholder** |
+| — | Registration form | Download from Challenge.gov "Resources" tab | — | — | Not started — external form, not generated here |
+| — | Submission email | `email_draft.md` | — | — | Template ready with `nvidra@anote.ai`; **do not send until the dataset is real** |
+
+The `.md` files remain the source of truth — edit those (or edit the `.docx` directly in Word)
+and regenerate. **The `.md` and `.docx` do not auto-sync**: if you edit one, the other goes
+stale until you either regenerate the `.docx` from `.md` (`build_docx.js`) or manually port your
+Word edits back into the `.md` before the next PDF rebuild.
+
+## .docx format compliance
+
+`docx/*.docx` were generated with `tools/build_docx.js` (the `docx` npm package) to meet the
+announcement's format rules: 8.5"×11" (US Letter), 1" margins, 11pt **true Arial** (unlike the
+PDF build, Word docs don't need a font substitute), line spacing >1.0, no HHS/NIH/NCATS logos.
+Structurally validated via the docx skill's XSD validator, `pandoc`, and `python-docx` — all
+three parse the files cleanly. This sandbox's LibreOffice (`soffice`) could not rasterize *any*
+docx to PDF for a visual preview (it failed identically on a trivial one-paragraph test file and
+even a plain `.txt`), so the visual layout has not been human-eyeballed the way the PDF versions
+were — open and check the layout in Word/Google Docs before relying on it.
+
+Regenerate after editing the `.md` sources:
+```
+npm install docx   # first time only, not vendored in this repo
+node phase2_submission/tools/build_docx.js
+```
 
 ## PDF format compliance
 
